@@ -1,0 +1,157 @@
+1. From the student’s own OS terminal (host) – connect to
+VM : 
+
+[root@redhat /root]$ who | grep pts
+user     pts/0        2025-11-25 11:06 (192.168.153.1)
+user     pts/1        2025-11-25 17:45 (192.168.153.1)
+user     pts/2        2025-11-25 17:53 (192.168.153.1)
+
+------------------------------------------------------------
+1. create a new group named 'labgroup' on a Linux system
+
+[root@redhat /root]$ groupadd labgroup
+
+
+Result:
+
+[root@redhat /root]$ grep "^labgroup:" /etc/group
+labgroup:x:1001:
+
+------------------------------------------------------------
+2. create a new user named 'labuser' with a home directory, default shell '/bin/bash'
+[root@redhat /root]$ adduser labuser -s /bin/bash
+
+Result:
+
+[root@redhat /root]$ id labuser
+uid=1001(labuser) gid=1003(labuser) groups=1003(labuser)
+
+------------------------------------------------------------
+3. add user 'labuser' to primary group 'labgroup'
+
+[root@redhat /root]$ usermod -g labgroup labuser
+
+Result:
+
+[root@redhat /root]$ id labuser
+uid=1001(labuser) gid=1001(labgroup) groups=1001(labgroup)
+
+------------------------------------------------------------
+4. set the password for the user 'labuser'
+
+[root@redhat /root]$ echo "logadacemy" | passwd labuser --stdin
+
+------------------------------------------------------------
+5. add the user 'labuser' to the 'wheel' group (sudo group)
+
+[root@redhat ~]# usermod -aG wheel labuser
+
+Result:
+[root@redhat ~]# id labuser
+uid=1001(labuser) gid=1001(labgroup) groups=1001(labgroup),10(wheel)
+
+
+------------------------------------------------------------
+6. give 'labuser' explicit sudo rights (with vim/visudo)
+
+[root@redhat /root]$ visudo
+
+Add 'labuser ALL=(ALL)       ALL' to sudoers file.
+
+------------------------------------------------------------
+7. switch user to 'labuser'
+8. change directory to 'labuser's home directory
+
+[root@redhat /root]$ su labuser
+[labuser@redhat /root]$ cd
+
+------------------------------------------------------------
+9. Execute the commands that creates a 'lab' directory inside 'labuser's home
+directory, change directory into it
+
+[labuser@redhat /home/labuser]$ mkdir ~/lab
+[labuser@redhat /home/labuser]$ cd ~/lab
+
+------------------------------------------------------------
+10.execute whoami, id, and pwd. redirect their outputs into a file called 'answer'
+using redirection operators.
+
+[labuser@redhat lab]$ whoami > answer.txt ; id >> answer.txt ; pwd >> answer.txt
+[labuser@redhat lab]$ cat answer.txt
+labuser
+uid=1001(labuser) gid=1001(labgroup) groups=1001(labgroup) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+/home/labuser/lab
+
+------------------------------------------------------------
+11. Use 'man' to get know about 'cut' command, specially, 'd' and 'f' options. (you can
+also research online and look examples)
+
+man cut \-d \-t
+
+------------------------------------------------------------
+12.using 'cut' command with 'd' and 'f' options, print last username in /etc/passwd file
+, using 'tail' command, to terminal. then append output to 'answer' file.
+
+[labuser@redhat lab]$ tail -1 /etc/passwd | cut -d ":" -f 1 | tee -a answer.txt
+labuser
+
+------------------------------------------------------------
+13.in one command, use 'grep' to get lines which starting with 'lab' for '/etc/passwd'
+and '/etc/group' file, and append output to 'answer' file.
+
+[labuser@redhat lab]$ grep "^lab" /etc/passwd | tee -a answer.txt
+labuser:x:1001:1001::/home/labuser:/bin/bash
+
+[root@redhat ~]# grep "^lab" /etc/group | tee -a answer.txt
+labgroup:x:1001:
+labuser:x:1003:
+
+
+------------------------------------------------------------
+14.use 'man' tool to read manual of 'wget' command.
+
+man wget
+
+------------------------------------------------------------
+15.using 'wget' command, download file:
+https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%2
+0Formats/apache_logs/apache_logs
+
+[labuser@redhat lab]$ mkdir /tmp/logs
+[labuser@redhat lab]$ wget -O /tmp/logs/apache.log \
+"https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%20Formats/apache_logs/apache_logs"
+--2025-11-25 19:39:49--  https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%20Formats/apache_logs/apache_logs
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.110.133, 185.199.111.133, 185.199.108.133, ...
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.110.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 2370789 (2.3M) [text/plain]
+Saving to: ‘/tmp/logs/apache.log’
+
+/tmp/logs/apache.log              100%[==========================================================>]   2.26M   569KB/s    in 4.6s
+
+2025-11-25 19:39:54 (502 KB/s) - ‘/tmp/logs/apache.log’ saved [2370789/2370789]
+
+------------------------------------------------------------
+16.using pipe operator (|), cut, sort, uniq, head commands, sort ip addresses by their
+counts in 'apache_logs' file and append top 10 results into 'answer' file.
+
+
+[labuser@redhat lab]$ cut -d '-' -f 1 /tmp/logs/apache.log | sort | uniq -c | sort -nr | head -10
+    482 66.249.73.135
+    364 46.105.14.53
+    357 130.237.218.86
+    273 75.97.9.59
+    113 50.16.19.13
+    102 209.85.238.199
+     99 68.180.224.225
+     84 100.43.83.137
+     83 208.115.111.72
+     82 198.46.149.143
+
+-------------------------------------------------------------
+17.use 'sha256sum' command to get shasum of your 'answer' file.
+
+[labuser@redhat lab]$ sha256sum answer.txt
+b968323b3cf09344b6788457cad614430d6e22be2a19e7d816a74036369ad152  answer.txt
+
+
