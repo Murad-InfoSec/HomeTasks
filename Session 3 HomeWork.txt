@@ -1,0 +1,154 @@
+*-----*----- Session 3-4 HomeTaks -----*-----*
+
+> User account operations:
+
+1.Create user named alex, and the user id shoud be 1234, and the password
+should be alex111.
+
+adduser alex -u 1234
+echo "alex111" | passwd alex --stdin
+
+Resulted:
+
+[root@localhost ~]# id alex
+uid=1234(alex) gid=1234(alex) groups=1234(alex)
+
+------------------------------------------------------------------------
+
+2.Add user user1, set uid=601. Password: redhat, The user's login shell should be
+non-interactive.
+
+adduser -u 601 -s /sbin/nologin
+adduser user1 -u 601 -s /sbin/nologin
+
+Resulted:
+
+[root@localhost ~]# grep user1 /etc/passwd
+user1:x:601:1235::/home/user1:/sbin/nologin
+
+------------------------------------------------------------------------
+
+3.Add admin group and set gid=600
+
+groupadd admin -g 600
+
+------------------------------------------------------------------------
+
+4.Create the user named eric and deny to interactive login.
+
+adduser eric -s /sbin/nologin
+
+Resulted:
+
+[root@localhost ~]# grep eric /etc/passwd
+eric:x:1235:1236::/home/eric:/sbin/nologin
+
+------------------------------------------------------------------------
+4.According to the following requirements to create user, user group and the group
+members:
+○ A group named admin
+○ A user named mary, and belong to admin as the secondary group
+○ A user named alice, and belong to admin as secondary group
+○ A user named bobby, bobby's login shell should be non-interactive. Bobby not
+belong admin as the secondary group.
+○ Mary, alice, bobby users must be set password as the user's password.
+adduser mary alice
+
+Resulted:
+
+groupadd admin
+adduser mary -G admin
+adduser alice -G admin
+adduser bobby -s /sbin/nologin
+echo -e "mary:password\alice:password\bobby:password" | chpasswd
+
+------------------------------------------------------------------------
+
+5.Create the following users, groups and group memberships:
+○ A group named adminuser
+○ A user natasha who belongs to adminuser as a secondary group
+○ A user harry who also belongs to adminuser as secondary group
+○ A user sarahat who does not have accessto an interactive shell on the system,
+and who i not a member of adminuser, natasha harry, and sarah sll have the
+password or redhat.
+
+Resulted:
+
+addgroup adminuser
+groupadd adminuser
+adduser natasha -G adminuser
+adduser harry -G adminuser
+adduser sarahat -s /sbin/nologin
+echo -e "natasha:password\harry:password\sarahat:password" | chpasswd
+
+------------------------------------------------------------------------
+
+<-------->     find and locate     <-------->
+
+find <location> -user <username> -exec <komanda> <tapilan_fayllar> \;
+
+● Task 1:
+○ Find the files owned by your user and copy it to cataog: /opt/dir
+
+find / -type f -user test_user -exec cp {} /opt/dir/ \;
+
+Resulted:
+
+[root@localhost ~]# ll -la /opt/dir | grep .bash
+-rw-------. 1 root root         294 Dec  5 13:18 .bash_history
+-rw-r--r--. 1 root root          18 Dec  5 13:30 .bash_logout
+-rw-r--r--. 1 root root         144 Dec  5 13:30 .bash_profile
+-rw-r--r--. 1 root root         522 Dec  5 13:30 .bashrc
+
+PS: Ownership was changed to root owned cause i didnt explicitly pointed out preserervation
+of rights and attributes via "cp -p".
+
+------------------------------------------------------------------------
+
+● Task 2:
+○ Find all files owned by your user and redirect the output to /home/alex/files
+
+find / -type f -user test_user > /home/alex/files.txt
+
+Resulted:
+
+[root@localhost ~]# cat /home/alex/files
+/home/test_user/.bash_logout
+/home/test_user/.bash_profile
+/home/test_user/.bashrc
+/var/spool/mail/test_user
+
+
+------------------------------------------------------------------------
+
+● Task 3:
+○ Find all sizes of 10KB file or directory under the /etc directory, and copy to
+/tmp/findfiles directory. Then, find all files or directories with your user as the
+owner, and copy them to /tmp/findfiles
+
+mkdir /tmp/findfiles
+find / -size 10k -exec cp {} /tmp/findfiles/ \;
+
+Resulted: 
+
+[root@localhost ~]# ll /tmp/findfiles | head -5
+total 17532
+-rwxr-xr-x. 1 root root  9380 Dec  6 13:24 00_header
+-rw-r--r--. 1 root root 10240 Dec  6 13:24 06-08-01
+-rw-r--r--. 1 root root 10240 Dec  6 13:24 06-08-06
+-rw-r--r--. 1 root root 10240 Dec  6 13:24 06-26-01
+
+<--------> 		performance tuning		<--------> 		
+
+● Task 1:
+○ Set your server to use recommended tuned profile.
+
+tuned-adm list
+tuned-adm recommend
+tuned-adm profile virtual-guest
+tuned-adm activefind / -size 10k
+
+Resulted:
+
+[root@localhost ~]# tuned-adm active
+Current active profile: virtual-guest
