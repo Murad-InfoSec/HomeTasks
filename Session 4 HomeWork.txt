@@ -1,0 +1,339 @@
+Preparation:
+
+> Create users: natasha, harry, user1, user2
+
+[root@localhost ~]# for user in natasha harry user1 user2; do adduser $user; done
+[root@localhost ~]# id natasha harry user1 user2
+Resulted: 
+
+uid=1001(natasha) gid=1001(natasha) groups=1001(natasha)
+uid=1002(harry) gid=1002(harry) groups=1002(harry)
+uid=1003(user1) gid=1003(user1) groups=1003(user1)
+uid=1004(user2) gid=1004(user2) groups=1004(user2)
+
+
+> Create groups: admin, adminuser, sharegrp
+
+[root@localhost ~]# for group in admin adminuser sharegrp; do groupadd $group; done
+
+Resulted:
+
+[root@localhost ~]# grep -E "admin|adminuser|sharegrp" /etc/group
+
+printadmin:x:994:
+admin:x:1005:
+adminuser:x:1006:
+sharegrp:x:1007:
+
+---------------------------------------------------------------------------------------
+
+Task 1:
+Create backup file named /root/backup.tar.bz2 The backup file should contain the content of
+/usr/local and should be zipped with bzip2 compression format.
+
+[root@localhost ~]# tar -cjf /backup.tar.bz2 /usr/local
+
+Resulted:
+
+[root@localhost ~]# file /backup.tar.bz2
+/backup.tar.bz2: bzip2 compressed data, block size = 900k
+
+[root@localhost ~]# tar -tjf /backup.tar.bz2
+usr/local/
+usr/local/bin/
+usr/local/etc/
+usr/local/games/
+usr/local/include/
+...
+
+---------------------------------------------------------------------------------------
+
+Task 2:
+Make on /archive directory that only the user owner and group owner member can fully access.
+
+[root@localhost ~]# chmod ug=rwx /backup.tar.bz2
+
+Resulted:
+
+NOTE*: Initial permissions on file was 644 cause copied without -p paramater.
+
+[root@localhost ~]# ls -l /backup.tar.bz2
+-rwxrwxr--. 1 root root 473 Dec  6 17:10 /backup.tar.bz2
+
+
+Task 3:
+Copy the file /etc/fstab to /var/tmp. Configure the following permissions on /var/tmp/fstab
+ cp /etc/fstab /var/tmp/fstab
+● Create user harry and natasha.
+
+● The file /var/tmp/fstabis owned by root user.
+● The file /var/tmp/fstab is belongs to the root group
+[root@localhost ~]# chown root:root /var/tmp/fstab
+
+● The file /var/tmp/fstab should be executable by anyone.
+[root@localhost ~]# chmod ugo+x /var/tmp/fstab
+
+● The user harry is able to read and write on /var/tmp/fstab.
+[root@localhost ~]# setfacl -m u:harry:rw /var/tmp/fstab
+
+● The user natasha can neither read nor write on /var/tmp/fstab.
+[root@localhost ~]# setfacl -m u:natasha:--x /var/tmp/fstab
+
+● All other users (current or future) have the ability to read /var/tmp/fstab
+[root@localhost ~]#  chmod o+r /var/tmp/fstab
+
+
+Resulted:
+
+[root@localhost ~]# ls -l /var/tmp/fstab
+-rwxrwxr-x+ 1 root root 796 Dec  6 17:19 /var/tmp/fstab
+
+[root@localhost ~]# getfacl /var/tmp/fstab
+getfacl: Removing leading '/' from absolute path names
+# file: var/tmp/fstab
+# owner: root
+# group: root
+user::rwx
+user:natasha:--x
+user:harry:rw-
+group::r-x
+mask::rwx
+other::r-x
+
+Task 4:
+Create a folder under /home named admins. Its respective group is requested to be the admin
+group. The group users could read and write, while other users are not allowed to access it. The
+files created by users from the same group should also be admin group.
+
+[root@localhost ~]# mkdir -p /home/admins 	
+[root@localhost ~]# chown :admin /home/admins
+[root@localhost ~]# chmod 2770  /home/admins
+
+Resulted:
+
+[root@localhost ~]# ls -ld /home/admins
+drwxrws---. 2 root admin 6 Dec  6 17:34 /home/admins
+
+Task 5:
+Create folder ‘data’, that only user owner and group owner member can fully access.
+
+[root@localhost ~]# mkdir data
+[root@localhost ~]# chmod 770 data
+
+Resulted:
+
+[root@localhost ~]# ls -ld data/
+drwxrwx---. 2 root root 6 Dec  6 17:40 data/
+
+Task 6:
+Create a collaborative directory /home/admins with the following characteristics:
+[root@localhost ~]# chown :adminuser /home/admins
+
+● Group ownership of /home/admins is adminuser
+[root@localhost ~]# chmod 2770 /home/admins
+
+● The directory should be readable, writeable, and accessible to members of adminuser,
+but not to any other user.
+● (It is understood that root has access to all files and directories on the system)
+● Files created in /home/admins automatically have group ownership set to the adminuser
+group.
+
+[root@localhost ~]# ls -ld /home/admins
+drwxrws---. 2 root adminuser 6 Dec  6 18:25 /home/admins
+
+
+Task 7:
+According to the following requirements to create a local directory /common/admin
+● This directory has admin group
+[root@localhost ~]# mkdir -p /common/admin
+[root@localhost ~]# chown :admin /common/admin
+
+● This directory has read,write, and execute permissions for all admin group members.
+● Other groups and users don't have any permissions
+[root@localhost ~]# chmod 770 /common/admin
+
+● All the documents or directories created in the /common/adminare automatically inherit
+the admin group.
+
+[root@localhost ~]# mkdir -p /common/adminare
+[root@localhost ~]# chown :admin /common/adminare
+[root@localhost ~]# chmod 2770 /common/admire
+
+Resulted:
+
+[root@localhost ~]# touch /common/adminare/example.txt
+[root@localhost ~]# ls -lR /common/
+/common/:
+total 0
+drwxr-xr-x. 2 root admin  6 Dec  6 18:29 admin
+drwxrws---. 2 root admin 25 Dec  6 18:40 adminare
+
+/common/admin:
+total 0
+
+/common/adminare:
+total 0
+-rw-r--r--. 1 root admin 0 Dec  6 18:40 example.txt
+
+Task 8:
+Create a shared directory /home/admins, make it has the following charasteristics:
+[root@localhost ~]# mkdir -p /home/admins
+
+● /home/admins belongs to adminuser
+[root@localhost ~]# chown :adminuser /home/admins
+
+● this directory can be read and written by members of group adminuser.
+● Any files created in /home/admins, group automatically set as adminuser
+[root@localhost ~]# chmod 2775 /home/admins
+
+Resulted:
+
+[root@localhost ~]# ls -ld /home/admins
+drwxrwsr-x. 2 root adminuser 6 Dec  6 18:44 /home/admins
+
+Task 9:
+Copy /etc/fstab to /var/tmpgroup name admin, the user1could read, write and modify it, while
+user2without any permission.
+
+[root@localhost ~]# cp /etc/fstab /var/tmp/fstab
+[root@localhost ~]# chown :admin /var/tmp/fstab
+[root@localhost ~]# chmod g+rwx /var/tmp/fstab
+[root@localhost ~]# setfacl -m u:user1:rw- /var/tmp/fstab
+[root@localhost ~]# setfacl -m u:user2:--- /var/tmp/fstab
+[root@localhost ~]# getfacl /var/tmp/fstab
+getfacl: Removing leading '/' from absolute path names
+# file: var/tmp/fstab
+# owner: root
+# group: admin
+user::rwx
+user:user1:rw-
+user:user2:---
+group::rwx
+mask::rwx
+other::r-x
+
+Task 10:
+Create a collaborative directory /mnt/shareswith the following characteristics:
+[root@localhost ~]# mkdir -p /mnt/sharegrp
+
+● Group ownership of /mnt/sharesshould be sharegrp.
+[root@localhost ~]# chown :sharegrp /mnt/sharegrp/
+
+● The direcory should be readable, writeable and accessible to member of sharegrpbut not
+to any other user. (It is understood that root has access to all files and directories on the
+system)
+● Files created in /mnt/shares automatically have group ownership set to the
+sharegrpgroup.
+[root@localhost ~]# chmod 2770 /mnt/sharegrp/
+
+Resulted:
+[root@localhost ~]# ls -ld /mnt/sharegrp/
+drwxrws---. 2 root sharegrp 6 Dec  6 18:53 /mnt/sharegrp/
+
+Task 11:
+Using chrony configure your system so that it is and NTP client of time.microsoft.com(Not Active)
+###Is active NTP server: server time.cloudflare.com iburst
+
+Add line "server: server time.cloudflare.com" iburst to /etc/chrony.config
+systemctl daemon-reload
+systemctl restart chronyd.service
+
+Resulted:
+
+[root@localhost ~]# chronyc sources
+MS Name/IP address         Stratum Poll Reach LastRx Last sample
+===============================================================================
+^* time3.google.com              1   6    37     5  +2275us[+1144us] +/-   37ms
+^+ sp1.katv1.net                 2   6    37     5  -4919us[-6049us] +/-   82ms
+^- time.cloudflare.com           3   6    37     5   +402us[ +402us] +/-   40ms
+
+
+Task 12:
+Configure your system with chrony so that it is and NTP client of time.microsoft.com
+The system time should be set to your timezone and ensure NTP sync is configured.
+
+[root@localhost ~]# timedatectl set-timezone Asia/Baku
+
+Resulted:
+
+[root@localhost ~]# timedatectl
+               Local time: Sat 2025-12-06 22:43:46 +04
+           Universal time: Sat 2025-12-06 18:43:46 UTC
+                 RTC time: Sat 2025-12-06 18:43:46
+                Time zone: Asia/Baku (+04, +0400)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+
+
+<------->		Task Web		<------->		
+
+Task 1 – Create an HTML File with that content:
+<html>
+<body>
+Welcome to My Red Hat Web Server
+</body>
+</html>
+
+Task 2 – Research and Install the Web Server using dnf
+[root@localhost ~]# dnf install httpd -y
+
+Task 3 – Start and Enable the httpd Service
+[root@localhost ~]# dnf install httpd -y
+[root@localhost ~]# systemctl status httpd.service | grep -Ei "active|inactive"
+     Active: active (running) since Sat 2025-12-06 22:54:23 +04; 53s ago
+Task 4 – Copy your index.html into the Apache default document root
+
+[root@localhost ~]# vim  /var/www/html/index.html
+
+Added line:
+
+"<html>
+<body>
+Welcome to My Red Hat Web Server
+</body>
+</html>"
+
+Configure SeLinux:
+[root@localhost ~]# semanage fcontext -a -t httpd_sys_content_t "/var/www/html(/.*)?"
+[root@localhost ~]# restorecon /var/www/html/
+
+
+Task 5 - Research and temporarily disable SELinux
+[root@localhost ~]# setenforce 0
+
+Resulted:
+
+[root@localhost ~]# getenforce
+Permissive
+
+Task 6 - use curl command to get index.html page from your website.
+
+On Redhat-VM resulted:
+
+[root@localhost ~]# curl localhost:80
+<html>
+<body>
+Welcome to My Red Hat Web Server
+</body>
+</html>
+
+To get access from Windows Host machine:
+
+[root@localhost ~]# firewall-cmd --add-port 80/tcp --permanent
+success
+[root@localhost ~]# firewall-cmd --reload
+success
+
+
+On Windows Host machine:
+
+Microsoft Windows [Version 10.0.22631.6199]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\murad>curl 192.168.153.136:80
+<html>
+<body>
+Welcome to My Red Hat Web Server
+</body>
+</html>
