@@ -1,0 +1,269 @@
+
+Task 1: Basic Permissions & Ownership
+• Preparation: Create user natasha and group sysadmins (if they don't exist).
+• Action: Create a file named /tmp/permission_test.
+• Target: Change the ownership so that it is owned by user natasha and group sysadmins.
+Set permissions: Owner=rw, Group=r, Others=none (640).
+
+[root@localhost ~]# adduser natasha
+[root@localhost ~]# groupadd sysadmins
+[root@localhost ~]# touch /tmp/permission_test
+[root@localhost ~]# chown natasha:sysadmins /tmp/permission_test
+[root@localhost ~]# chmod 640 /tmp/permission_test
+
+Resutled in:
+
+[root@localhost ~]# ls -l /tmp/permission_test
+-rw-r-----. 1 natasha sysadmins 0 Dec 20 18:37 /tmp/permission_test
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 2: Sticky Bit Implementation
+• Preparation: Create a directory /home/shared_scripts.
+• Action: Set the permissions so that any user can create and modify files within the
+directory.
+• Target: Apply the Sticky Bit to ensure that users can only delete the files they actually
+own.
+
+[root@localhost ~]# mkdir -p /home/shared_scripts
+[root@localhost ~]# chmod 1777 /home/shared_scripts/
+
+Resutled in:
+
+[root@localhost ~]# ls -ld /home/shared_scripts/
+drwxrwxrwt. 2 root root 6 Dec 20 18:42 /home/shared_scripts/
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 3: Group Collaboration (SGID)
+• Preparation: Ensure group sysadmins exists. Create directory /home/admins.
+• Action: Change the group ownership of /home/admins to sysadmins.
+• Target: Configure it so that any new files created inside this directory automatically
+inherit the sysadmins group ownership.
+
+[root@localhost ~]# grep sysadmins /etc/group
+sysadmins:x:1002:
+[root@localhost ~]# mkdir /home/admins
+[root@localhost ~]# chown :sysadmins /home/admins/
+[root@localhost ~]# chmod g+s /home/admins/
+
+Resutled in: 
+[root@localhost ~]# ls -ld /home/admins/
+drwxr-sr-x. 2 root sysadmins 6 Dec 20 18:48 /home/admins/
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 4: Default Permissions (Umask)
+• Action: Check the current umask for the root user.
+• Target: Temporarily change it so that new files created by root in the current session
+have permissions rw-r----- (640).
+
+[root@localhost ~]# umask
+0022
+[root@localhost ~]# umask 0026
+[root@localhost ~]# umask
+0026
+[root@localhost ~]# touch test_file
+
+Resulted in:
+
+[root@localhost ~]# ls -l test_file
+-rw-r-----. 1 root root 0 Dec 20 18:53 test_file
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 5: Access Control Lists (ACL) - User Access
+• Preparation: Create user harry. Copy /etc/services to /var/tmp/services.
+• Action: Configure the ACL for /var/tmp/services.
+• Target: Give user harry specific read and write (rw-) permissions, even if he is not the
+owner or a group member
+
+[root@localhost ~]# adduser harry
+[root@localhost ~]# cp /etc/services /var/tmp/services
+[root@localhost ~]# setfacl -m u:harry:rw /var/tmp/services
+
+Resulted in:
+[root@localhost ~]# getfacl /var/tmp/services | grep harry
+getfacl: Removing leading '/' from absolute path names
+user:harry:rw-
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 6: Access Control Lists (ACL) - Restriction
+• Preparation: Ensure user natasha exists.
+• Action: Use the same file /var/tmp/services.
+• Target: Ensure user natasha has absolutely no permissions (---), while everyone else can
+still read the file.
+
+[root@localhost ~]# ls -l /var/tmp/services
+-rw-rw----+ 1 root root 701707 Dec 20 19:03 /var/tmp/services
+
+[root@localhost ~]# chmod a+r /var/tmp/services
+[root@localhost ~]# setfacl -m u:natasha:--- /var/tmp/services
+
+Resulted in:
+
+[root@localhost ~]# getfacl /var/tmp/services
+getfacl: Removing leading '/' from absolute path names
+# file: var/tmp/services
+# owner: root
+# group: root
+user::rw-
+user:natasha:---
+user:harry:rw-
+group::r--
+mask::rw-
+other::r--
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 7: Process Identification
+• Action: Start a background process using the command sleep 2000 &.
+• Target: Use the ps command to find its Process ID (PID) and its current State (S) (e.g., S
+or R)
+
+[root@localhost ~]# sleep 2000 &
+[1] 65159
+
+Resulten in:
+
+[root@localhost ~]# ps -aux | grep 65159
+root       65159  0.0  0.0 226820  1928 pts/3    S    19:23   0:00 sleep 2000
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 8: Process Priority (Nice Value)
+• Action: Start a new process sleep 3000 & with a nice value of 10.
+• Target: Verify the priority using the top or ps -el command.
+
+[root@localhost ~]# nice -n +10 sleep 3000 &
+[3] 65184
+
+Resulted in:
+
+[root@localhost ~]# ps -o pid,ni,state  | grep 65184
+  65184  10 S
+
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 9: Changing Priority (Renice)
+• Action: Identify the PID of the process you started in Task 7.
+• Target: Change its priority (renice) to 5 while it is still running.
+
+[root@localhost ~]# ps -o pid,ni,pri,state  | grep 65159
+  65159   0  19 S
+[root@localhost ~]# renice +5 65159
+65159 (process ID) old priority 0, new priority 5
+
+Resulted in:
+
+[root@localhost ~]# ps -o pid,ni,pri,state  | grep 65159
+  65159   5  14 S
+  
+------------------------------------------ ***** --------------------------------------------
+
+Task 10: Terminating Processes
+• Preparation: Switch to user harry (su - harry) and start several background processes
+(e.g., sleep 100 &, sleep 200 &). Switch back to root.
+• Target: Find all processes running by user harry and terminate them using a single
+command (e.g., pkill -u harry).
+
+[root@localhost ~]# su - harry
+Last login: Sat Dec 20 19:45:46 +04 2025 on pts/3
+
+[harry@localhost ~]$ for ms in {100,200,300,400} ; do eval "sleep $ms &"; done
+[1] 65387
+[2] 65388
+[3] 65389
+[4] 65390
+
+[root@localhost ~]# ps -eo user,pid,stat,tty,cmd | grep harry
+root       65247 S    pts/3    su - harry
+harry      65248 S    pts/3    -bash
+root       65338 S    pts/3    su - harry
+harry      65339 S    pts/3    -bash
+harry      65388 S    pts/3    sleep 200
+harry      65389 S    pts/3    sleep 300
+harry      65390 S    pts/3    sleep 400
+root       65435 S+   pts/3    grep --color=auto harry
+
+[root@localhost ~]# pkill -u harry
+
+Resulted in:
+
+[root@localhost ~]# ps -eo user,pid,stat,tty,cmd | grep harry
+root       65247 S    pts/3    su - harry
+harry      65248 S    pts/3    -bash
+root       65338 S    pts/3    su - harry
+harry      65339 S    pts/3    -bash
+root       65687 S+   pts/3    grep --color=auto harry
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 11: Archiving with Compression (bzip2)
+• Action: Create a compressed archive of the /etc directory.
+• Target: Use bzip2 compression and save it as /root/backup_etc.tar.bz2. Ensure that the
+archive preserves all original file permissions.
+
+[root@localhost ~]# ls -l /etc | head -5
+total 1328
+-rw-r--r--.  1 root                 root                     16 Nov 23 13:37 adjtime
+-rw-r--r--.  1 root                 root                   1529 Nov 29  2023 aliases
+drwxr-xr-x.  3 root                 root                     65 Jul  1 04:00 alsa
+drwxr-xr-x.  2 root                 root                   4096 Nov 23 13:33 alternatives
+
+[root@localhost ~]# tar -xjf --xattr /root/backup_etc.tar.bz2 /etc
+
+[root@localhost ~]# tar -tvjf /root/backup_etc.tar.bz2 | sort -k6 | head -6 | tail -5
+-rw-r--r-- root/root        16 2025-11-23 13:37 etc/adjtime
+-rw-r--r-- root/root      1529 2023-11-29 14:34 etc/aliases
+drwxr-xr-x root/root         0 2025-07-01 04:00 etc/alsa/
+-rw-r--r-- root/root       203 2025-07-01 04:00 etc/alsa/alsactl.conf
+drwxr-xr-x root/root         0 2025-11-23 13:33 etc/alsa/conf.d/
+
+------------------------------------------ ***** --------------------------------------------
+
+Task 12: File Synchronization (rsync)
+• Preparation: Create a destination directory /root/log_mirror.
+• Action: Synchronize the contents of /var/log/ to /root/log_mirror/.
+• Target: Use rsync with flags that preserve links, permissions, and timestamps (archive
+mode)
+
+[root@localhost ~]# ls -l /var/log | head -5
+total 1472
+drwxr-xr-x. 2 root   root     4096 Nov 23 13:38 anaconda
+drwx------. 2 root   root       23 Apr 11  2025 audit
+-rw-------. 1 root   root    58355 Nov 23 13:41 boot.log
+-rw-rw----. 1 root   utmp      384 Nov 23 13:44 btmp
+
+[root@localhost ~]# mkdir /var/log_mirror
+[root@localhost ~]# rsync -ltpaz /var/log /var/log_mirror
+
+Resulted in:
+
+[root@localhost ~]# ls -l /var/log_mirror | head -5
+total 4
+drwxr-xr-x. 15 root root 4096 Dec 20 18:29 log
+
+[root@localhost ~]# ls -l /var/log_mirror/log  | head -5
+total 1744
+drwxr-xr-x. 2 root   root     4096 Nov 23 13:38 anaconda
+drwx------. 2 root   root       23 Apr 11  2025 audit
+-rw-------. 1 root   root    58355 Nov 23 13:41 boot.log
+-rw-rw----. 1 root   utmp      384 Nov 23 13:44 btmp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
