@@ -1,5 +1,4 @@
 # Network Troubleshooting Report  
-*(Structured by Individual Cases)*
 
 ---
 
