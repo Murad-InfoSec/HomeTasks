@@ -1,0 +1,171 @@
+# Network Troubleshooting Report
+
+---
+
+## Case 1 – VTY Remote Access Configuration (SW-2)
+
+### Issue
+VTY lines required authentication configuration for secure Telnet access.
+
+### Initial Configuration
+```console
+SW-2#show running-config | section line
+line con 0
+line vty 0 4
+ login
+line vty 5 15
+ login
+```
+
+### Corrective Action
+```console
+SW-2(config)#username netadmin secret salamaleikum
+SW-2(config)#line vty 0 4
+SW-2(config-line)#login local
+SW-2(config-line)#end
+SW-2#copy running-config startup-config
+```
+
+### Verification Output
+```console
+C:\>telnet 192.168.10.99
+Trying 192.168.10.99 ...Open
+
+User Access Verification
+Username: netadmin
+Password:
+SW-2>
+```
+
+### Result
+Remote access successfully secured and operational.
+
+---
+
+## Case 2 – VLAN 10 Missing & Trunk Restriction (SW-1)
+
+### Issue
+- VLAN 10 missing on SW-1  
+- Fa0/2 assigned to VLAN 1  
+- Trunk not allowing VLAN 10  
+
+### Corrective Action
+```console
+SW-1(config)#interface fa0/2
+SW-1(config-if)#switchport mode access
+SW-1(config-if)#switchport access vlan 10
+
+SW-1(config)#interface gig0/1
+SW-1(config-if)#switchport mode trunk
+SW-1(config-if)#switchport trunk allowed vlan 10,20,30
+```
+
+### Verification
+```console
+SW-1#show vlan brief
+VLAN 10 active    Fa0/2
+```
+
+```console
+SW-1#show interface trunk
+Vlans allowed on trunk
+Gig0/1  10,20,30
+```
+
+```console
+C:\>ping 192.168.10.100
+Reply from 192.168.10.100: bytes=32 time<1ms TTL=128
+Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)
+```
+
+### Result
+VLAN segmentation corrected. Intra-VLAN communication restored.
+
+---
+
+## Case 3 – SW-0 Fa0/1 Unconfigured
+
+### Issue
+Fa0/1 not assigned to required VLAN 20.
+
+### Corrective Action
+```console
+SW-0(config)#interface fa0/1
+SW-0(config-if)#switchport mode access
+SW-0(config-if)#switchport access vlan 20
+SW-0#copy running-config startup-config
+```
+
+### Verification
+```console
+SW-0#show vlan brief
+20   VLAN0020   active   Fa0/1, Fa0/2
+```
+
+### Result
+Port successfully assigned to VLAN 20.
+
+---
+
+## Case 4 – Unused Ports Shutdown (Security Hardening)
+
+### Switch-0
+```console
+SW-0(config)#interface range fa0/4 - 24
+SW-0(config-if-range)#shutdown
+```
+
+### Switch-2
+```console
+SW-2(config)#interface range fa0/2 - 24
+SW-2(config-if-range)#shutdown
+```
+
+### Result Output
+```console
+%LINK-5-CHANGED: Interface FastEthernet0/4, changed state to administratively down
+```
+
+### Result
+Unused ports disabled to improve security posture.
+
+---
+
+## Case 5 – Unused Ports Assigned to VLAN 99 (SW-2)
+
+### Issue
+Unused ports remained in default VLAN 1.
+
+### Corrective Action
+```console
+SW-2(config)#interface range fa0/2 - 24
+SW-2(config-if-range)#switchport mode access
+SW-2(config-if-range)#switchport access vlan 99
+```
+
+System response:
+```console
+% Access VLAN does not exist. Creating vlan 99
+```
+
+### Result
+Unused interfaces isolated in VLAN 99.
+
+---
+
+## Case 6 – Incorrect VLAN Assignment (SW-1 Fa0/1)
+
+### Issue
+Fa0/1 incorrectly assigned to VLAN 20 instead of VLAN 30.
+
+### Corrective Action
+```console
+SW-1(config)#interface fa0/1
+SW-1(config-if)#switchport mode access
+SW-1(config-if)#switchport access vlan 30
+SW-1#copy running-config startup-config
+```
+
+### Verification
+```console
+C:\>ping 192.168.30.1
