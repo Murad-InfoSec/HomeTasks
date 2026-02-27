@@ -1,86 +1,38 @@
-Virtualization Setup Report
+Network Troubleshooting Report
+Case 1 – Access Port Configuration & Static IP Assignment (SW-1 / PC1)
+Issue
+Fa0/2 was not properly assigned to the required VLAN.
+PC1 required correct VLAN alignment and IP configuration.
+Initial VLAN Status
+SW-1#show vlan brief
 
-Platform: AlmaLinux
-Goal: Prepare host for Kubernetes lab using KVM
+VLAN Name                             Status    Ports
+1    default                          active    Fa0/3–Fa0/24, Gig0/1, Gig0/2
+10   VLAN0010                         active
+20   VLAN0020                         active    Fa0/1
+30   VLAN0030                         active
+300  VLAN0300                         active
+Fa0/2 was not assigned to VLAN 20.
 
-1️⃣ Verified Hardware Virtualization
+Corrective Action
+SW-1#configure terminal
+SW-1(config)#interface fa0/2
+SW-1(config-if)#switchport mode access
+SW-1(config-if)#switchport access vlan 20
+SW-1(config-if)#end
+SW-1#copy running-config startup-config
+System notifications observed:
 
-Checked CPU support:
+%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan10, changed state to down
+%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan30, changed state to down
+Host Configuration (PC1)
+IP configuration updated from DHCP to Static:
 
-egrep -c '(vmx|svm)' /proc/cpuinfo
-
-Result > 0 confirms VT-x / SVM enabled.
-
-2️⃣ Installed Virtualization Stack
-
-Installed required components:
-
-KVM
-
-QEMU
-
-libvirt
-
-virt-install
-
-virt-manager
-
-bridge-utils
-
-sudo dnf install -y qemu-kvm libvirt virt-install bridge-utils virt-manager
-3️⃣ Enabled libvirt Service
-sudo systemctl enable --now libvirtd
-
-Verified:
-
-systemctl status libvirtd
-
-Service running successfully.
-
-4️⃣ Verified KVM Modules
-lsmod | grep kvm
-
-Confirmed kvm_intel or kvm_amd loaded.
-
-5️⃣ Configured Default Network
-
-Defined and started default network:
-
-sudo virsh net-define /usr/share/libvirt/networks/default.xml
-sudo virsh net-start default
-sudo virsh net-autostart default
-
-Verified:
-
-sudo virsh net-list --all
-
-Network default is active and persistent.
-
-6️⃣ Resolved System vs Session Context
-
-System scope:
-
-virsh -c qemu:///system net-list --all
-
-To avoid sudo:
-
-sudo usermod -aG libvirt eduard
-
-(Re-login required)
-
-7️⃣ Launched GUI
-
-Started graphical manager:
-
-virt-manager
-
-Connected to:
-
-qemu:///system
-Current State
-
-✔ KVM hypervisor active
-✔ libvirt operational
-✔ Default network configured
-✔ GUI available
-✔ Ready to create VMs for Kubernetes
+IP Address: 192.168.20.101
+Subnet Mask: 255.255.255.0
+Result
+Fa0/2 successfully assigned to VLAN 20
+PC1 correctly placed in VLAN 20 broadcast domain
+Static IP aligned with subnet 192.168.20.0/24
+Configuration saved to NVRAM
+Network Status: Access layer configuration successfully completed.
