@@ -52,7 +52,7 @@ sudo dnf install -y qemu-kvm libvirt virt-install virt-manager bridge-utils
 </tr>
 <tr>
 <td style="border:1px solid #ddd; padding:8px;">libvirt</td>
-<td style="border:1px solid #ddd; padding:8px;">Virtualization Orchestration & Management Layer</td>
+<td style="border:1px solid #ddd; padding:8px;">Virtualization Orchestration & Management Layer (API)</td>
 </tr>
 <tr>
 <td style="border:1px solid #ddd; padding:8px;">virt-manager</td>
