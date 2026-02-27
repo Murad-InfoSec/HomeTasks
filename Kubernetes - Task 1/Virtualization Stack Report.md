@@ -1,29 +1,29 @@
-# Virtualization Deployment Report
+Virtualization Deployment Report
 
-**Platform:** AlmaLinux  
-**Purpose:** Prepare host for Kubernetes lab  
+Platform: AlmaLinux
+Purpose: Prepare host for Kubernetes multi-node lab
 
----
+1️⃣ Hardware Verification
 
-## Deployment Summary
+Confirmed CPU virtualization support (VT-x / SVM):
 
-### 1️⃣ Hardware Verification
-
-```bash
 egrep -c '(vmx|svm)' /proc/cpuinfo
 
-Confirmed CPU virtualization support (VT-x / SVM enabled).
+Output > 0 → Hardware acceleration enabled.
 
-2️⃣ Stack Installation
+2️⃣ Virtualization Stack Installation
+
+Installed core components:
+
 sudo dnf install -y qemu-kvm libvirt virt-install virt-manager bridge-utils
 
-Installed components:
+Components deployed:
 
-KVM – Kernel-level hypervisor
+KVM → Kernel-level Type-1 hypervisor
 
-QEMU – Virtual machine execution engine
+QEMU → Virtual machine execution engine
 
-libvirt – Management and orchestration layer
+libvirt → Orchestration & management layer
 
 3️⃣ Service Activation
 sudo systemctl enable --now libvirtd
@@ -32,43 +32,47 @@ Verified:
 
 systemctl status libvirtd
 
-libvirt daemon running successfully.
+Status: active (running)
 
 4️⃣ Hypervisor Verification
 lsmod | grep kvm
 
-Confirmed kvm_intel or kvm_amd module loaded.
-Kernel operating as a Type-1 hypervisor.
+Confirmed kvm_intel or kvm_amd loaded.
+Kernel now functioning as hypervisor.
 
-5️⃣ Network Activation
+5️⃣ Default Network Deployment
 sudo virsh net-define /usr/share/libvirt/networks/default.xml
 sudo virsh net-start default
 sudo virsh net-autostart default
 
-Default NAT network activated via virbr0.
+Verified:
+
+sudo virsh net-list --all
+
+Network default active via bridge virbr0 (NAT mode).
 
 Underlying Architecture
 virt-manager / virsh
         ↓
-libvirt (orchestration layer)
+libvirt (management daemon)
         ↓
-QEMU (VM process per instance)
+QEMU (one process per VM)
         ↓
 /dev/kvm interface
         ↓
 KVM kernel module
         ↓
-CPU virtualization extensions (VT-x / SVM)
+CPU virtualization extensions
 Final State
 
-Kernel-level hypervisor active
+Kernel-integrated hypervisor active
 
-libvirtd operational
+Hardware acceleration enabled
 
-Default network configured
+Default NAT network operational
 
 GUI management available
 
-Environment ready for VM provisioning
+Environment ready for VM provisioning and Kubernetes deployment
 
-Status: Virtualization stack successfully deployed and Kubernetes-ready.
+Status: Virtualization stack successfully deployed and production-capable.
